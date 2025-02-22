@@ -43,13 +43,13 @@ function main(): void {
     .derive(harden(1852))
     .derive(harden(1815))
     .derive(harden(0));
-  const stakeKey = accountKey.derive(2).derive(0).to_public();
+  const stakePrivKey = accountKey.derive(2).derive(0);
   const utxoPrivKey = accountKey.derive(0).derive(0);
 
   const addr = BaseAddress.new(
     NetworkInfo.testnet_preprod().network_id(),
     Credential.from_keyhash(utxoPrivKey.to_public().to_raw_key().hash()),
-    Credential.from_keyhash(stakeKey.to_raw_key().hash())
+    Credential.from_keyhash(stakePrivKey.to_public().to_raw_key().hash())
   );
 
   const linearFee = LinearFee.new(
@@ -70,7 +70,7 @@ function main(): void {
 
   const drep = DRep.new_always_abstain();
   const voteDelegation = VoteDelegation.new(
-    Credential.from_keyhash(stakeKey.to_raw_key().hash()),
+    Credential.from_keyhash(stakePrivKey.to_public().to_raw_key().hash()),
     drep
   );
 
@@ -91,6 +91,8 @@ function main(): void {
   const txBody = txBuilder.build();
 
   const transaction = FixedTransaction.new_from_body_bytes(txBody.to_bytes());
+
+  transaction.sign_and_add_vkey_signature(stakePrivKey.to_raw_key());
   transaction.sign_and_add_vkey_signature(utxoPrivKey.to_raw_key());
 
   console.log(transaction.to_hex());
